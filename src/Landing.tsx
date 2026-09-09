@@ -1,39 +1,1011 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronDown, Gift, Heart, Pause, Play, Sparkles, Users, X } from 'lucide-react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Header, Modal } from './components';
-import Calendar from './Calendar';
-import Preloader from './Preloader';
-import { dateLabel, rooms, today } from './data';
-import { addDays } from './availability.mjs';
-import { useStore } from './store';
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  Gift,
+  Heart,
+  Pause,
+  Play,
+  Sparkles,
+  Users,
+  X,
+} from "lucide-react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Header, Modal } from "./components";
+import Calendar from "./Calendar";
+import Preloader from "./Preloader";
+import { dateLabel, rooms, today } from "./data";
+import { addDays } from "./availability.mjs";
+import { useStore } from "./store";
 gsap.registerPlugin(ScrollTrigger);
-const gallery=[{src:'/images/sala2.png',title:'Svetlost koja menja sve.'},{src:'/images/soba1.png',title:'Vaš prostor za predah.'},{src:'/images/sala1.png',title:'Pažnja u svakom detalju.'},{src:'/images/soba2.png',title:'Udobnost, bez kompromisa.'},{src:'/images/igraonica.png',title:'Njihov mali veliki svet.'},{src:'/images/soba3.png',title:'Još samo jedna noć.'}];
-const faqs=[['Kako mogu da rezervišem sobu?','Izaberite datume i broj gostiju, pronađite sobu koja vam odgovara i popunite podatke. Na detail stranici svake sobe možete pogledati njen kalendar dostupnosti. U ovom demou rezervacija se odmah pojavljuje u vašem nalogu.'],['Mogu li da promenim ili otkažem rezervaciju?','Da. U delu „Moj boravak“ možete izabrati druge slobodne datume ili otkazati rezervaciju. Demo prikazuje besplatno otkazivanje; konačna pravila hotela dogovaraju se pre puštanja sistema u rad.'],['Kako da proverim termin za proslavu?','Kalendar svečane sale je javno dostupan. Izaberite slobodan datum i pošaljite upit sa brojem gostiju i vrstom proslave. Upit ne znači automatsku rezervaciju — termin potvrđuje tim hotela.'],['Da li je moguć boravak sa decom?','U demou možete odabrati prostraniju sobu za porodični boravak, a našu igraonicu videti u galeriji. Konkretne uslove i dodatni ležaj dogovarate kroz napomenu uz rezervaciju.'],['Mogu li da rezervišem više soba ili kupim vaučer?','Da, demo podržava grupni izbor soba i poklon vaučere. Pri rezervaciji možete odabrati dodatne usluge i iskoristiti promo kod CRYSTAL10. Svi iznosi u demou su ilustrativni.'],['Kako funkcioniše plaćanje?','Prikazane su opcije plaćanja na recepciji, akontacije i celog iznosa. Ovo je prezentacioni demo: kartice se ne unose i novac se ne naplaćuje.']];
-export default function Landing(){const root=useRef<HTMLDivElement>(null);const video=useRef<HTMLVideoElement>(null);const navigate=useNavigate();const {inquiries,setInquiries,addVoucher,toast}=useStore();const [paused,setPaused]=useState(false);const [start,setStart]=useState(addDays(today,2));const [end,setEnd]=useState(addDays(today,4));const [guests,setGuests]=useState('2');const [eventDate,setEventDate]=useState('');const [eventModal,setEventModal]=useState(false);const [eventType,setEventType]=useState('Venčanje');const [eventSent,setEventSent]=useState(false);const [giftModal,setGiftModal]=useState(false);const [giftDone,setGiftDone]=useState(false);const [amount,setAmount]=useState(100);const [galleryIndex,setGalleryIndex]=useState<number|null>(null);const [activeFaq,setActiveFaq]=useState<number|null>(0);const [lang,setLang]=useState<'sr'|'en'>('sr');const [contactSent,setContactSent]=useState(false);
- useEffect(()=>{const mm=gsap.matchMedia();mm.add('(prefers-reduced-motion: no-preference)',()=>{const ctx=gsap.context(()=>{gsap.utils.toArray<HTMLElement>('[data-reveal]').forEach(el=>gsap.fromTo(el,{y:38,opacity:0},{y:0,opacity:1,duration:1,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 92%',once:true}}));gsap.utils.toArray<HTMLElement>('[data-parallax]').forEach(el=>gsap.fromTo(el,{yPercent:-7,scale:1.1},{yPercent:7,scale:1.1,ease:'none',scrollTrigger:{trigger:el.parentElement,start:'top bottom',end:'bottom top',scrub:1}}));gsap.to('.story-word',{color:'#e9dfcd',stagger:.13,ease:'none',scrollTrigger:{trigger:'.story-copy',start:'top 78%',end:'bottom 42%',scrub:1}});gsap.to('.celebration-title',{yPercent:-15,ease:'none',scrollTrigger:{trigger:'.celebration-visual',start:'top bottom',end:'bottom top',scrub:1}});gsap.to('.scroll-progress',{scaleX:1,ease:'none',scrollTrigger:{trigger:root.current,start:'top top',end:'bottom bottom',scrub:.1}})},root);return()=>ctx.revert()});return()=>mm.revert()},[]);
- const search=(e:FormEvent)=>{e.preventDefault();navigate(`/booking?start=${start}&end=${end}&guests=${guests}`)};
- const openEvent=(type=eventType)=>{setEventType(type);setEventSent(false);setEventModal(true)};
- const submitEvent=(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();const f=new FormData(e.currentTarget);if(!eventDate)return; if(inquiries.some(q=>q.date===eventDate&&q.status==='Potvrđeno')){toast('Termin je u međuvremenu zauzet. Izaberite drugi datum.');return}setInquiries(prev=>[{id:'EV-'+Date.now().toString().slice(-6),name:String(f.get('name')),email:String(f.get('email')),phone:String(f.get('phone')),date:eventDate,type:eventType,guests:Number(f.get('guests')),note:String(f.get('note')),status:'Novi upit',own:true},...prev]);setEventSent(true)};
- const toggleVideo=()=>{if(!video.current)return;if(video.current.paused){video.current.play().catch(()=>{});}else video.current.pause()};
- return <div className="landing" ref={root}><Preloader/><div className="scroll-progress"/><Header/><main>
- <section className="hero" aria-label="Crystal Light hotel"><div className="hero-media"><video ref={video} autoPlay muted loop playsInline preload="auto" poster="/images/hero-poster.jpg" onPlay={()=>setPaused(false)} onPause={()=>setPaused(true)}><source src="/images/hero-mobile.mp4" type="video/mp4"/></video><div className="hero-shade"/></div><div className="hero-content"><h1>{lang==='sr'?<>Neki trenuci<br/><em>ostaju zauvek.</em></>:<>Some moments<br/><em>stay forever.</em></>}</h1><p>{lang==='sr'?'Vaš predah. Vaša proslava. Naš svet pažnje.':'Your escape. Your celebration. Our world of care.'}</p><a className="hero-cta" href="#prica">{lang==='sr'?'Otkrijte Crystal Light':'Discover Crystal Light'}<ArrowUpRight size={21}/></a></div><div className="hero-bottom"><a href="#prica" className="scroll-cue"><span className="scroll-stroke"/><span>SKROLUJTE I OSETITE</span><ArrowDown size={15}/></a><div className="hero-controls"><button onClick={()=>setLang(lang==='sr'?'en':'sr')} aria-label="Promeni jezik uvoda">{lang.toUpperCase()}<span>/ {lang==='sr'?'EN':'SR'}</span></button><button onClick={toggleVideo} aria-label={paused?'Pusti video':'Pauziraj video'}>{paused?<Play size={15}/>:<Pause size={15}/>}</button></div></div></section>
- <form className="booking-strip" onSubmit={search}><label><CalendarDays size={19}/><span><small>DOLAZAK</small><input aria-label="Datum dolaska" type="date" min={today} value={start} required onChange={e=>{setStart(e.target.value);if(e.target.value>=end)setEnd(addDays(e.target.value,1))}}/></span></label><label><CalendarDays size={19}/><span><small>ODLAZAK</small><input aria-label="Datum odlaska" type="date" min={addDays(start,1)} value={end} required onChange={e=>setEnd(e.target.value)}/></span></label><label className="guest-field"><Users size={19}/><span><small>GOSTI</small><select value={guests} onChange={e=>setGuests(e.target.value)} aria-label="Broj gostiju">{[1,2,3,4,5,6].map(n=><option value={n} key={n}>{n} {n===1?'gost':'gosta'}</option>)}</select></span></label><button className="btn btn-gold">Pronađite sobu<ArrowUpRight size={20}/></button></form>
- <section className="intro-section section-pad" id="prica"><div className="intro-side" data-reveal><span className="eyebrow">DOBRO DOŠLI U CRYSTAL LIGHT</span><span className="section-number">01 / UMETNOST BORAVKA</span></div><div className="intro-main"><h2 className="story-copy">{'Nije važno samo gde ste. Važno je kako se osećate.'.split(' ').map((w,i)=><span className="story-word" key={i}>{w} </span>)}</h2><div className="intro-description" data-reveal><span className="little-star">✧</span><p>Postoje mesta na koja dođete.<br/>I ona kojima se vraćate.<br/><br/>Od prvog dobrodošli do poslednjeg trenutka boravka, svaki detalj je tu da se osećate posebno. Ovo je vaš prostor za male predahe i velika slavlja.</p><a className="text-link" href="#sobe">Pronađite svoj mir <ArrowUpRight size={18}/></a></div></div></section>
- <div className="marquee" aria-hidden="true"><div>{Array.from({length:4},(_,i)=><span key={i}>BORAVAK SA STILOM <i>✧</i> TREN U KOJI SE ZALJUBITE <i>✧</i> CRYSTAL LIGHT <i>✧</i> </span>)}</div></div>
- <section className="rooms-section section-pad" id="sobe"><div className="section-top" data-reveal><div><span className="eyebrow">VAŠ SVET TIŠINE</span><h2>Samo još<br/><em>jedna noć.</em></h2></div><p>Ušuškajte se u udobnost.<br/>Ostatak sveta može da sačeka.</p></div><div className="room-editorial">{rooms.map((room,i)=><article className="room-card" key={room.id} data-reveal><Link className="room-photo" to={'/sobe/'+room.id}><img src={room.image} alt={room.name+' — Crystal Light'} loading="lazy"/><span className="room-index">0{i+1}</span><span className="image-arrow"><ArrowUpRight/></span></Link><div className="room-meta"><span>{room.capacity} GOSTA <i/> {room.size} M²</span><span>OD <strong>{room.price} €</strong> / NOĆ</span></div><Link to={'/sobe/'+room.id}><h3>{room.name}<ArrowUpRight size={23}/></h3></Link><p>{room.subtitle}</p><Link className="room-calendar-link" to={'/sobe/'+room.id+'#dostupnost'}><CalendarDays size={15}/>Kalendar dostupnosti<ArrowRight size={15}/></Link></article>)}</div><div className="rooms-foot"><p>Cene i kapaciteti su prikazani za potrebe demoa.</p><Link to="/booking">Više soba, jedan boravak <ArrowUpRight size={16}/></Link></div></section>
- <section className="celebration" id="proslave"><div className="celebration-visual"><img src="/images/sala2.png" alt="Svečana sala Crystal Light pod svetlucavim plafonom" data-parallax loading="lazy"/><div className="celebration-shade"/><div className="celebration-title"><span className="eyebrow">POZORNICA VAŠIH NAJLEPŠIH USPOMENA</span><h2>Vaš trenutak.<br/><em>U punom sjaju.</em></h2><p>Vi donesite razlog za slavlje.<br/>Mi ćemo se pobrinuti za čaroliju.</p><button className="btn btn-glass" onClick={()=>openEvent()}>Isplanirajte proslavu<ArrowUpRight size={20}/></button></div><span className="celebration-caption">CRYSTAL LIGHT / CELEBRATIONS</span></div><div className="events-intro section-pad"><div data-reveal><span className="eyebrow">JEDAN PROSTOR. BEZBROJ PRIČA.</span><h2>Za sve vaše<br/><em>velike „da“.</em></h2><div className="event-types">{['Venčanje','Rođendan','Krštenje','Poslovni događaj'].map((type,i)=><button key={type} onClick={()=>openEvent(type)}><small>0{i+1}</small>{type}<ArrowUpRight size={19}/></button>)}</div></div><div className="hall-calendar" data-reveal><div className="hall-calendar-title"><CalendarDays size={22}/><div><h3>Sačuvajte svoj datum.</h3><p>Kalendar dostupnosti svečane sale</p></div></div><Calendar mode="single" start={eventDate} end="" occupiedDates={inquiries.filter(q=>q.status==='Potvrđeno').map(q=>q.date)} onChange={s=>setEventDate(s)}/><button className="btn btn-gold full" onClick={()=>openEvent()}>{eventDate?`Pošaljite upit za ${dateLabel(eventDate)}`:'Pošaljite upit za proslavu'}<ArrowUpRight size={18}/></button><p className="fine-print">Demo raspoloživost · Upit ne rezerviše termin automatski.</p></div></div></section>
- <section className="experiences section-pad" id="dozivljaji"><div className="section-top" data-reveal><div><span className="eyebrow">VIŠE OD BORAVKA</span><h2>Uživanje.<br/><em>Na vaš način.</em></h2></div><p>Za ljubitelje dobrih zalogaja.<br/>I one kojima igra nikada nije dovoljna.</p></div><article className="experience-row"><div className="experience-image"><img src="/images/sala1.png" alt="Pažljivo postavljen sto u restoranu" loading="lazy" data-parallax/></div><div className="experience-copy" data-reveal><span className="eyebrow">01 / ZA SVA ČULA</span><h3>Dobri ukusi.<br/><em>Još bolje društvo.</em></h3><p>Postavljen sto. Vaši ljudi. Razgovori koji traju. Prostor za ukusne rituale i uživanje u svakom zalogaju.</p><button className="text-link" onClick={()=>openEvent('Večera u restoranu')}>Upit za vaš sto<ArrowUpRight size={18}/></button></div></article><article className="experience-row reverse"><div className="experience-image"><img src="/images/igraonica.png" alt="Dečija igraonica sa toboganom i bazenom sa lopticama" loading="lazy" data-parallax/></div><div className="experience-copy" data-reveal><span className="eyebrow">02 / MALI GOSTI, VELIKA RADOST</span><h3>Njihov svet igre.<br/><em>Vaš trenutak mira.</em></h3><p>Dok vi uživate, oni stvaraju svoje najlepše uspomene. Šareni kutak za maštu, smeh i avanture koje se prepričavaju.</p><button className="text-link" onClick={()=>openEvent('Dečiji rođendan')}>Isplanirajte dečiji rođendan<ArrowUpRight size={18}/></button></div></article></section>
- <section className="gift-section section-pad" id="vauceri"><div className="gift-visual" data-reveal><div className="gift-orbit one"/><div className="gift-orbit two"/><div className="gift-card"><span className="gift-brand">CRYSTAL LIGHT</span><span className="gift-c">C</span><div><span>POKLONITE USPOMENU</span><strong>Za nekog posebnog.</strong></div><span className="gift-bottom">GIFT EXPERIENCE <Gift size={20}/></span></div></div><div className="gift-copy" data-reveal><span className="eyebrow">NAJLEPŠE STVARI NISU STVARI</span><h2>Poklonite<br/><em>jedan osećaj.</em></h2><p>Vikend udvoje. Večera za pamćenje. Mali beg od svakodnevice. Crystal Light poklon vaučer ostavlja prostor za velike osmehe.</p><button className="btn btn-gold" onClick={()=>{setGiftDone(false);setGiftModal(true)}}>Kreirajte poklon vaučer<ArrowUpRight size={18}/></button><Link to="/client" className="loyalty-link"><Heart size={17}/><span>Vraćate nam se? Vaše pogodnosti vas čekaju.</span><ArrowUpRight size={18}/></Link></div></section>
- <section className="gallery-section section-pad" id="galerija"><div className="section-top" data-reveal><div><span className="eyebrow">POGLED KOJI GOVORI VIŠE</span><h2>Osetite <em>atmosferu.</em></h2></div><span className="gallery-instruction">DODIRNITE FOTOGRAFIJU <ArrowUpRight size={16}/></span></div><div className="gallery-rail">{gallery.map((item,i)=><button className="gallery-item" key={item.src} onClick={()=>setGalleryIndex(i)}><img src={item.src} alt={item.title} loading="lazy"/><span><small>0{i+1}</small>{item.title}<ArrowUpRight size={19}/></span></button>)}</div><p className="gallery-swipe"><ArrowLeft size={14}/> Prevucite da otkrijete više <ArrowRight size={14}/></p></section>
- <section className="faq-section section-pad"><div data-reveal><span className="eyebrow">DOBRO JE ZNATI</span><h2>Bez pitanja<br/><em>bez odgovora.</em></h2><p>Sve što vam je potrebno<br/>za bezbrižan dolazak.</p></div><div className="faq-list">{faqs.map(([q,a],i)=><div className={`faq-item ${activeFaq===i?'open':''}`} key={q}><button aria-expanded={activeFaq===i} aria-controls={'faq-'+i} onClick={()=>setActiveFaq(activeFaq===i?null:i)}><span><small>0{i+1}</small>{q}</span><ChevronDown size={20}/></button><div id={'faq-'+i} hidden={activeFaq!==i}><p>{a}</p></div></div>)}</div></section>
- <section className="contact-section section-pad" id="kontakt"><div data-reveal><span className="eyebrow">VAŠA PRIČA POČINJE OVDE</span><h2>Hajde da stvorimo<br/><em>nešto za pamćenje.</em></h2><div className="contact-actions"><Link className="btn btn-gold" to="/booking">Rezervišite boravak<ArrowUpRight size={20}/></Link><button className="btn btn-outline" onClick={()=>openEvent()}>Organizujte proslavu<ArrowUpRight size={20}/></button></div></div><form className="contact-form" onSubmit={e=>{e.preventDefault();setContactSent(true);toast('Vaš demo zahtev za kontakt je zabeležen.')}}><label htmlFor="contact-email">Budimo u kontaktu.</label><p>Ostavite svoj kontakt za više informacija o boravku i proslavama.</p><div><input id="contact-email" type="email" required placeholder="Vaša e-mail adresa" aria-label="Vaša e-mail adresa"/><button aria-label="Pošalji kontakt" type="submit">{contactSent?<Check/>:<ArrowUpRight/>}</button></div><small>{contactSent?'Hvala! Demo zahtev je primljen. Poruka nije poslata.':'Demo forma · Bez slanja e-mail poruka.'}</small></form></section>
- <footer className="site-footer"><div className="footer-wordmark">Crystal <em>Light</em><span>✧</span></div><div className="footer-bottom"><span>© {new Date().getFullYear()} Crystal Light · Hotel & Events</span><span>Prezentacioni demo · Adspire Digital</span><button onClick={()=>{sessionStorage.removeItem('crystal-intro');window.location.reload()}}>Ponovi uvodni doživljaj <Sparkles size={14}/></button></div></footer>
- </main>
- {eventModal&&<Modal title={eventSent?'Vaš trenutak je korak bliže.':'Hajde da isplaniramo slavlje.'} onClose={()=>setEventModal(false)}>{eventSent?<div className="success-state"><span className="success-icon"><Check size={32}/></span><h3>Hvala na poverenju.</h3><p>Upit za {dateLabel(eventDate)} je zabeležen u demou. Pratite njegov status u svom nalogu.</p><Link to="/client" className="btn btn-gold">Moj nalog<ArrowUpRight size={18}/></Link><small>Ovo je simulacija. Poruka nije poslata hotelu.</small></div>:<form onSubmit={submitEvent} className="event-form"><p className="muted">Recite nam kako zamišljate svoj poseban dan.</p><div className="form-grid"><label className="field">Vrsta proslave<select value={eventType} onChange={e=>setEventType(e.target.value)}>{['Venčanje','Rođendan','Krštenje','Poslovni događaj','Dečiji rođendan','Večera u restoranu'].map(t=><option key={t}>{t}</option>)}</select></label><label className="field">Datum<input type="date" value={eventDate} min={today} required onChange={e=>setEventDate(e.target.value)}/></label><label className="field">Ime i prezime<input name="name" required placeholder="Vaše ime" autoComplete="name"/></label><label className="field">Broj gostiju<input name="guests" type="number" required min="1" max="500" defaultValue="50"/></label><label className="field">E-mail<input name="email" type="email" autoComplete="email" required placeholder="ime@primer.rs"/></label><label className="field">Telefon<input name="phone" type="tel" autoComplete="tel" required placeholder="+381"/></label></div><label className="field">Vaše želje<textarea name="note" rows={3} placeholder="Dekoracija, meni, muzika... Pišite nam o svojim idejama."/></label><button className="btn btn-gold full" type="submit">Pošaljite demo upit<ArrowUpRight size={18}/></button><p className="fine-print">Nema stvarnog slanja. Upit se prikazuje u admin panelu.</p></form>}</Modal>}
- {giftModal&&<Modal title={giftDone?'Lep trenutak, spreman za poklon.':'Poklon koji se pamti.'} onClose={()=>setGiftModal(false)}>{giftDone?<div className="success-state"><span className="success-icon"><Gift size={32}/></span><h3>Vaš demo vaučer je spreman.</h3><p>Vaučer u vrednosti od {amount} € čeka vas u korisničkom nalogu.</p><Link to="/client" className="btn btn-gold">Pogledajte vaučer<ArrowUpRight size={18}/></Link><small>Nema naplate. Vaučer je demonstracioni.</small></div>:<form onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);addVoucher({id:'GIFT-'+Date.now().toString().slice(-5),amount,name:String(f.get('recipient'))});setGiftDone(true)}}><p className="muted">Izaberite vrednost i posvetite ga svojoj dragoj osobi.</p><div className="gift-amounts">{[50,100,200,300].map(v=><button type="button" className={amount===v?'active':''} key={v} onClick={()=>setAmount(v)}>{v} €</button>)}</div><label className="field">Ime primaoca<input name="recipient" placeholder="Za koga čuvamo lep trenutak?" required/></label><label className="field">Vaš e-mail<input type="email" name="email" placeholder="ime@primer.rs" required/></label><button className="btn btn-gold full" type="submit">Kreirajte demo vaučer · {amount} €<Gift size={18}/></button><p className="fine-print">Demo kupovina, bez plaćanja i slanja poruke.</p></form>}</Modal>}
- {galleryIndex!==null&&<Modal title={gallery[galleryIndex].title} onClose={()=>setGalleryIndex(null)} wide><div className="lightbox"><img src={gallery[galleryIndex].src} alt={gallery[galleryIndex].title}/><div className="lightbox-controls"><button className="icon-button" aria-label="Prethodna fotografija" onClick={()=>setGalleryIndex((galleryIndex+gallery.length-1)%gallery.length)}><ArrowLeft/></button><span>{galleryIndex+1} / {gallery.length}</span><button className="icon-button" aria-label="Sledeća fotografija" onClick={()=>setGalleryIndex((galleryIndex+1)%gallery.length)}><ArrowRight/></button></div></div></Modal>}
- </div>
+const gallery = [
+  { src: "/images/sala2.png", title: "Svetlost koja menja sve." },
+  { src: "/images/soba1.png", title: "Vaš prostor za predah." },
+  { src: "/images/sala1.png", title: "Pažnja u svakom detalju." },
+  { src: "/images/soba2.png", title: "Udobnost, bez kompromisa." },
+  { src: "/images/igraonica.png", title: "Njihov mali veliki svet." },
+  { src: "/images/soba3.png", title: "Još samo jedna noć." },
+];
+const faqs = [
+  [
+    "Kako mogu da rezervišem sobu?",
+    "Izaberite datume i broj gostiju, pronađite sobu koja vam odgovara i popunite podatke. Na detail stranici svake sobe možete pogledati njen kalendar dostupnosti. U ovom demou rezervacija se odmah pojavljuje u vašem nalogu.",
+  ],
+  [
+    "Mogu li da promenim ili otkažem rezervaciju?",
+    "Da. U delu „Moj boravak“ možete izabrati druge slobodne datume ili otkazati rezervaciju. Demo prikazuje besplatno otkazivanje; konačna pravila hotela dogovaraju se pre puštanja sistema u rad.",
+  ],
+  [
+    "Kako da proverim termin za proslavu?",
+    "Kalendar svečane sale je javno dostupan. Izaberite slobodan datum i pošaljite upit sa brojem gostiju i vrstom proslave. Upit ne znači automatsku rezervaciju — termin potvrđuje tim hotela.",
+  ],
+  [
+    "Da li je moguć boravak sa decom?",
+    "U demou možete odabrati prostraniju sobu za porodični boravak, a našu igraonicu videti u galeriji. Konkretne uslove i dodatni ležaj dogovarate kroz napomenu uz rezervaciju.",
+  ],
+  [
+    "Mogu li da rezervišem više soba ili kupim vaučer?",
+    "Da, demo podržava grupni izbor soba i poklon vaučere. Pri rezervaciji možete odabrati dodatne usluge i iskoristiti promo kod CRYSTAL10. Svi iznosi u demou su ilustrativni.",
+  ],
+  [
+    "Kako funkcioniše plaćanje?",
+    "Prikazane su opcije plaćanja na recepciji, akontacije i celog iznosa. Ovo je prezentacioni demo: kartice se ne unose i novac se ne naplaćuje.",
+  ],
+];
+export default function Landing() {
+  const root = useRef<HTMLDivElement>(null);
+  const video = useRef<HTMLVideoElement>(null);
+  const navigate = useNavigate();
+  const { inquiries, setInquiries, addVoucher, toast } = useStore();
+  const [paused, setPaused] = useState(false);
+  const [start, setStart] = useState(addDays(today, 2));
+  const [end, setEnd] = useState(addDays(today, 4));
+  const [guests, setGuests] = useState("2");
+  const [eventDate, setEventDate] = useState("");
+  const [eventModal, setEventModal] = useState(false);
+  const [eventType, setEventType] = useState("Venčanje");
+  const [eventSent, setEventSent] = useState(false);
+  const [giftModal, setGiftModal] = useState(false);
+  const [giftDone, setGiftDone] = useState(false);
+  const [amount, setAmount] = useState(100);
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
+  const [activeFaq, setActiveFaq] = useState<number | null>(0);
+  const [lang, setLang] = useState<"sr" | "en">("sr");
+  const [contactSent, setContactSent] = useState(false);
+  useEffect(() => {
+    const mm = gsap.matchMedia();
+    mm.add("(prefers-reduced-motion: no-preference)", () => {
+      const ctx = gsap.context(() => {
+        gsap.utils
+          .toArray<HTMLElement>("[data-reveal]")
+          .forEach((el) =>
+            gsap.fromTo(
+              el,
+              { y: 38, opacity: 0 },
+              {
+                y: 0,
+                opacity: 1,
+                duration: 1,
+                ease: "power3.out",
+                scrollTrigger: { trigger: el, start: "top 92%", once: true },
+              },
+            ),
+          );
+        gsap.utils
+          .toArray<HTMLElement>("[data-parallax]")
+          .forEach((el) =>
+            gsap.fromTo(
+              el,
+              { yPercent: -7, scale: 1.1 },
+              {
+                yPercent: 7,
+                scale: 1.1,
+                ease: "none",
+                scrollTrigger: {
+                  trigger: el.parentElement,
+                  start: "top bottom",
+                  end: "bottom top",
+                  scrub: 1,
+                },
+              },
+            ),
+          );
+        gsap.to(".story-word", {
+          color: "#e9dfcd",
+          stagger: 0.13,
+          ease: "none",
+          scrollTrigger: {
+            trigger: ".story-copy",
+            start: "top 78%",
+            end: "bottom 42%",
+            scrub: 1,
+          },
+        });
+        gsap.to(".celebration-title", {
+          yPercent: -15,
+          ease: "none",
+          scrollTrigger: {
+            trigger: ".celebration-visual",
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1,
+          },
+        });
+        gsap.to(".scroll-progress", {
+          scaleX: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: root.current,
+            start: "top top",
+            end: "bottom bottom",
+            scrub: 0.1,
+          },
+        });
+      }, root);
+      return () => ctx.revert();
+    });
+    return () => mm.revert();
+  }, []);
+  const search = (e: FormEvent) => {
+    e.preventDefault();
+    navigate(`/booking?start=${start}&end=${end}&guests=${guests}`);
+  };
+  const openEvent = (type = eventType) => {
+    setEventType(type);
+    setEventSent(false);
+    setEventModal(true);
+  };
+  const submitEvent = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    if (!eventDate) return;
+    if (
+      inquiries.some((q) => q.date === eventDate && q.status === "Potvrđeno")
+    ) {
+      toast("Termin je u međuvremenu zauzet. Izaberite drugi datum.");
+      return;
+    }
+    setInquiries((prev) => [
+      {
+        id: "EV-" + Date.now().toString().slice(-6),
+        name: String(f.get("name")),
+        email: String(f.get("email")),
+        phone: String(f.get("phone")),
+        date: eventDate,
+        type: eventType,
+        guests: Number(f.get("guests")),
+        note: String(f.get("note")),
+        status: "Novi upit",
+        own: true,
+      },
+      ...prev,
+    ]);
+    setEventSent(true);
+  };
+  const toggleVideo = () => {
+    if (!video.current) return;
+    if (video.current.paused) {
+      video.current.play().catch(() => {});
+    } else video.current.pause();
+  };
+  return (
+    <div className="landing" ref={root}>
+      <Preloader />
+      <div className="scroll-progress" />
+      <Header />
+      <main>
+        <section className="hero" aria-label="Crystal Light hotel">
+          <div className="hero-media">
+            <video
+              ref={video}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              poster="/images/hero-poster.jpg"
+              onPlay={() => setPaused(false)}
+              onPause={() => setPaused(true)}
+            >
+              <source src="/images/hero-mobile.mp4" type="video/mp4" />
+            </video>
+            <div className="hero-shade" />
+          </div>
+          <div className="hero-content">
+            <h1>
+              {lang === "sr" ? (
+                <>
+                  Neki trenuci
+                  <br />
+                  <em>ostaju zauvek.</em>
+                </>
+              ) : (
+                <>
+                  Some moments
+                  <br />
+                  <em>stay forever.</em>
+                </>
+              )}
+            </h1>
+            <p>
+              {lang === "sr"
+                ? "Vaš predah. Vaša proslava. Naš svet pažnje."
+                : "Your escape. Your celebration. Our world of care."}
+            </p>
+            <a className="hero-cta" href="#prica">
+              {lang === "sr"
+                ? "Otkrijte Crystal Light"
+                : "Discover Crystal Light"}
+              <ArrowUpRight size={21} />
+            </a>
+          </div>
+          <div className="hero-bottom">
+            <a href="#prica" className="scroll-cue">
+              <span className="scroll-stroke" />
+              <span>SKROLUJTE I OSETITE</span>
+              <ArrowDown size={15} />
+            </a>
+            <div className="hero-controls">
+              <button
+                onClick={() => setLang(lang === "sr" ? "en" : "sr")}
+                aria-label="Promeni jezik uvoda"
+              >
+                {lang.toUpperCase()}
+                <span>/ {lang === "sr" ? "EN" : "SR"}</span>
+              </button>
+              <button
+                onClick={toggleVideo}
+                aria-label={paused ? "Pusti video" : "Pauziraj video"}
+              >
+                {paused ? <Play size={15} /> : <Pause size={15} />}
+              </button>
+            </div>
+          </div>
+        </section>
+        <form className="booking-strip" onSubmit={search}>
+          <label>
+            <CalendarDays size={19} />
+            <span>
+              <small>DOLAZAK</small>
+              <input
+                aria-label="Datum dolaska"
+                type="date"
+                min={today}
+                value={start}
+                required
+                onChange={(e) => {
+                  setStart(e.target.value);
+                  if (e.target.value >= end) setEnd(addDays(e.target.value, 1));
+                }}
+              />
+            </span>
+          </label>
+          <label>
+            <CalendarDays size={19} />
+            <span>
+              <small>ODLAZAK</small>
+              <input
+                aria-label="Datum odlaska"
+                type="date"
+                min={addDays(start, 1)}
+                value={end}
+                required
+                onChange={(e) => setEnd(e.target.value)}
+              />
+            </span>
+          </label>
+          <label className="guest-field">
+            <Users size={19} />
+            <span>
+              <small>GOSTI</small>
+              <select
+                value={guests}
+                onChange={(e) => setGuests(e.target.value)}
+                aria-label="Broj gostiju"
+              >
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <option value={n} key={n}>
+                    {n} {n === 1 ? "gost" : "gosta"}
+                  </option>
+                ))}
+              </select>
+            </span>
+          </label>
+          <button className="btn btn-gold">
+            Pronađite sobu
+            <ArrowUpRight size={20} />
+          </button>
+        </form>
+        <section className="intro-section section-pad" id="prica">
+          <div className="intro-side" data-reveal>
+            <span className="eyebrow">DOBRO DOŠLI U CRYSTAL LIGHT</span>
+            <span className="section-number">01 / UMETNOST BORAVKA</span>
+          </div>
+          <div className="intro-main">
+            <h2 className="story-copy">
+              {"Nije važno samo gde ste. Važno je kako se osećate."
+                .split(" ")
+                .map((w, i) => (
+                  <span className="story-word" key={i}>
+                    {w}{" "}
+                  </span>
+                ))}
+            </h2>
+            <div className="intro-description" data-reveal>
+              <span className="little-star">✧</span>
+              <p>
+                Postoje mesta na koja dođete.
+                <br />I ona kojima se vraćate.
+                <br />
+                <br />
+                Od prvog dobrodošli do poslednjeg trenutka boravka, svaki detalj
+                je tu da se osećate posebno. Ovo je vaš prostor za male predahe
+                i velika slavlja.
+              </p>
+              <a className="text-link" href="#sobe">
+                Pronađite svoj mir <ArrowUpRight size={18} />
+              </a>
+            </div>
+          </div>
+        </section>
+        <div className="marquee" aria-hidden="true">
+          <div>
+            {Array.from({ length: 4 }, (_, i) => (
+              <span key={i}>
+                BORAVAK SA STILOM <i>✧</i> TREN U KOJI SE ZALJUBITE <i>✧</i>{" "}
+                CRYSTAL LIGHT <i>✧</i>{" "}
+              </span>
+            ))}
+          </div>
+        </div>
+        <section className="rooms-section section-pad" id="sobe">
+          <div className="section-top" data-reveal>
+            <div>
+              <span className="eyebrow">VAŠ SVET TIŠINE</span>
+              <h2>
+                Samo još
+                <br />
+                <em>jedna noć.</em>
+              </h2>
+            </div>
+            <p>
+              Ušuškajte se u udobnost.
+              <br />
+              Ostatak sveta može da sačeka.
+            </p>
+          </div>
+          <div className="room-editorial">
+            {rooms.map((room, i) => (
+              <article className="room-card" key={room.id} data-reveal>
+                <Link className="room-photo" to={"/sobe/" + room.id}>
+                  <img
+                    src={room.image}
+                    alt={room.name + " — Crystal Light"}
+                    loading="lazy"
+                  />
+                  <span className="room-index">0{i + 1}</span>
+                  <span className="image-arrow">
+                    <ArrowUpRight />
+                  </span>
+                </Link>
+                <div className="room-meta">
+                  <span>
+                    {room.capacity} GOSTA <i /> {room.size} M²
+                  </span>
+                  <span>
+                    OD <strong>{room.price} €</strong> / NOĆ
+                  </span>
+                </div>
+                <Link to={"/sobe/" + room.id}>
+                  <h3>
+                    {room.name}
+                    <ArrowUpRight size={23} />
+                  </h3>
+                </Link>
+                <p>{room.subtitle}</p>
+                <Link
+                  className="room-calendar-link"
+                  to={"/sobe/" + room.id + "#dostupnost"}
+                >
+                  <CalendarDays size={15} />
+                  Kalendar dostupnosti
+                  <ArrowRight size={15} />
+                </Link>
+              </article>
+            ))}
+          </div>
+          <div className="rooms-foot">
+            <p>Cene i kapaciteti su prikazani za potrebe demoa.</p>
+            <Link to="/booking">
+              Više soba, jedan boravak <ArrowUpRight size={16} />
+            </Link>
+          </div>
+        </section>
+        <section className="celebration" id="proslave">
+          <div className="celebration-visual">
+            <img
+              src="/images/sala2.png"
+              alt="Svečana sala Crystal Light pod svetlucavim plafonom"
+              data-parallax
+              loading="lazy"
+            />
+            <div className="celebration-shade" />
+            <div className="celebration-title">
+              <span className="eyebrow">
+                POZORNICA VAŠIH NAJLEPŠIH USPOMENA
+              </span>
+              <h2>
+                Vaš trenutak.
+                <br />
+                <em>U punom sjaju.</em>
+              </h2>
+              <p>
+                Vi donesite razlog za slavlje.
+                <br />
+                Mi ćemo se pobrinuti za čaroliju.
+              </p>
+              <button className="btn btn-glass" onClick={() => openEvent()}>
+                Isplanirajte proslavu
+                <ArrowUpRight size={20} />
+              </button>
+            </div>
+            <span className="celebration-caption">
+              CRYSTAL LIGHT / CELEBRATIONS
+            </span>
+          </div>
+          <div className="events-intro section-pad">
+            <div data-reveal>
+              <span className="eyebrow">JEDAN PROSTOR. BEZBROJ PRIČA.</span>
+              <h2>
+                Za sve vaše
+                <br />
+                <em>velike „da“.</em>
+              </h2>
+              <div className="event-types">
+                {["Venčanje", "Rođendan", "Krštenje", "Poslovni događaj"].map(
+                  (type, i) => (
+                    <button key={type} onClick={() => openEvent(type)}>
+                      <small>0{i + 1}</small>
+                      {type}
+                      <ArrowUpRight size={19} />
+                    </button>
+                  ),
+                )}
+              </div>
+            </div>
+            <div className="hall-calendar" id="dostupnost-sale" data-reveal>
+              <div className="hall-calendar-title">
+                <CalendarDays size={22} />
+                <div>
+                  <h3>Sačuvajte svoj datum.</h3>
+                  <p>Kalendar dostupnosti svečane sale</p>
+                </div>
+              </div>
+              <Calendar
+                mode="single"
+                start={eventDate}
+                end=""
+                occupiedDates={inquiries
+                  .filter((q) => q.status === "Potvrđeno")
+                  .map((q) => q.date)}
+                onChange={(s) => setEventDate(s)}
+              />
+              <button className="btn btn-gold full" onClick={() => openEvent()}>
+                {eventDate
+                  ? `Pošaljite upit za ${dateLabel(eventDate)}`
+                  : "Pošaljite upit za proslavu"}
+                <ArrowUpRight size={18} />
+              </button>
+              <p className="fine-print">
+                Demo raspoloživost · Upit ne rezerviše termin automatski.
+              </p>
+            </div>
+          </div>
+        </section>
+        <section className="experiences section-pad" id="dozivljaji">
+          <div className="section-top" data-reveal>
+            <div>
+              <span className="eyebrow">VIŠE OD BORAVKA</span>
+              <h2>
+                Uživanje.
+                <br />
+                <em>Na vaš način.</em>
+              </h2>
+            </div>
+            <p>
+              Za ljubitelje dobrih zalogaja.
+              <br />I one kojima igra nikada nije dovoljna.
+            </p>
+          </div>
+          <article className="experience-row">
+            <div className="experience-image">
+              <img
+                src="/images/sala1.png"
+                alt="Pažljivo postavljen sto u restoranu"
+                loading="lazy"
+                data-parallax
+              />
+            </div>
+            <div className="experience-copy" data-reveal>
+              <span className="eyebrow">01 / ZA SVA ČULA</span>
+              <h3>
+                Dobri ukusi.
+                <br />
+                <em>Još bolje društvo.</em>
+              </h3>
+              <p>
+                Postavljen sto. Vaši ljudi. Razgovori koji traju. Prostor za
+                ukusne rituale i uživanje u svakom zalogaju.
+              </p>
+              <button
+                className="text-link"
+                onClick={() => openEvent("Večera u restoranu")}
+              >
+                Upit za vaš sto
+                <ArrowUpRight size={18} />
+              </button>
+            </div>
+          </article>
+          <article className="experience-row reverse">
+            <div className="experience-image">
+              <img
+                src="/images/igraonica.png"
+                alt="Dečija igraonica sa toboganom i bazenom sa lopticama"
+                loading="lazy"
+                data-parallax
+              />
+            </div>
+            <div className="experience-copy" data-reveal>
+              <span className="eyebrow">02 / MALI GOSTI, VELIKA RADOST</span>
+              <h3>
+                Njihov svet igre.
+                <br />
+                <em>Vaš trenutak mira.</em>
+              </h3>
+              <p>
+                Dok vi uživate, oni stvaraju svoje najlepše uspomene. Šareni
+                kutak za maštu, smeh i avanture koje se prepričavaju.
+              </p>
+              <button
+                className="text-link"
+                onClick={() => openEvent("Dečiji rođendan")}
+              >
+                Isplanirajte dečiji rođendan
+                <ArrowUpRight size={18} />
+              </button>
+            </div>
+          </article>
+        </section>
+        <section className="gift-section section-pad" id="vauceri">
+          <div className="gift-visual" data-reveal>
+            <div className="gift-orbit one" />
+            <div className="gift-orbit two" />
+            <div className="gift-card">
+              <span className="gift-brand">CRYSTAL LIGHT</span>
+              <span className="gift-c">C</span>
+              <div>
+                <span>POKLONITE USPOMENU</span>
+                <strong>Za nekog posebnog.</strong>
+              </div>
+              <span className="gift-bottom">
+                GIFT EXPERIENCE <Gift size={20} />
+              </span>
+            </div>
+          </div>
+          <div className="gift-copy" data-reveal>
+            <span className="eyebrow">NAJLEPŠE STVARI NISU STVARI</span>
+            <h2>
+              Poklonite
+              <br />
+              <em>jedan osećaj.</em>
+            </h2>
+            <p>
+              Vikend udvoje. Večera za pamćenje. Mali beg od svakodnevice.
+              Crystal Light poklon vaučer ostavlja prostor za velike osmehe.
+            </p>
+            <button
+              className="btn btn-gold"
+              onClick={() => {
+                setGiftDone(false);
+                setGiftModal(true);
+              }}
+            >
+              Kreirajte poklon vaučer
+              <ArrowUpRight size={18} />
+            </button>
+            <Link to="/client" className="loyalty-link">
+              <Heart size={17} />
+              <span>Vraćate nam se? Vaše pogodnosti vas čekaju.</span>
+              <ArrowUpRight size={18} />
+            </Link>
+          </div>
+        </section>
+        <section className="gallery-section section-pad" id="galerija">
+          <div className="section-top" data-reveal>
+            <div>
+              <span className="eyebrow">POGLED KOJI GOVORI VIŠE</span>
+              <h2>
+                Osetite <em>atmosferu.</em>
+              </h2>
+            </div>
+            <span className="gallery-instruction">
+              DODIRNITE FOTOGRAFIJU <ArrowUpRight size={16} />
+            </span>
+          </div>
+          <div className="gallery-rail">
+            {gallery.map((item, i) => (
+              <button
+                className="gallery-item"
+                key={item.src}
+                onClick={() => setGalleryIndex(i)}
+              >
+                <img src={item.src} alt={item.title} loading="lazy" />
+                <span>
+                  <small>0{i + 1}</small>
+                  {item.title}
+                  <ArrowUpRight size={19} />
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="gallery-swipe">
+            <ArrowLeft size={14} /> Prevucite da otkrijete više{" "}
+            <ArrowRight size={14} />
+          </p>
+        </section>
+        <section className="faq-section section-pad">
+          <div data-reveal>
+            <span className="eyebrow">DOBRO JE ZNATI</span>
+            <h2>
+              Bez pitanja
+              <br />
+              <em>bez odgovora.</em>
+            </h2>
+            <p>
+              Sve što vam je potrebno
+              <br />
+              za bezbrižan dolazak.
+            </p>
+          </div>
+          <div className="faq-list">
+            {faqs.map(([q, a], i) => (
+              <div
+                className={`faq-item ${activeFaq === i ? "open" : ""}`}
+                key={q}
+              >
+                <button
+                  aria-expanded={activeFaq === i}
+                  aria-controls={"faq-" + i}
+                  onClick={() => setActiveFaq(activeFaq === i ? null : i)}
+                >
+                  <span>
+                    <small>0{i + 1}</small>
+                    {q}
+                  </span>
+                  <ChevronDown size={20} />
+                </button>
+                <div id={"faq-" + i} hidden={activeFaq !== i}>
+                  <p>{a}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="contact-section section-pad" id="kontakt">
+          <div data-reveal>
+            <span className="eyebrow">VAŠA PRIČA POČINJE OVDE</span>
+            <h2>
+              Hajde da stvorimo
+              <br />
+              <em>nešto za pamćenje.</em>
+            </h2>
+            <div className="contact-actions">
+              <Link className="btn btn-gold" to="/booking">
+                Rezervišite boravak
+                <ArrowUpRight size={20} />
+              </Link>
+              <button className="btn btn-outline" onClick={() => openEvent()}>
+                Organizujte proslavu
+                <ArrowUpRight size={20} />
+              </button>
+            </div>
+          </div>
+          <form
+            className="contact-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setContactSent(true);
+              toast("Vaš demo zahtev za kontakt je zabeležen.");
+            }}
+          >
+            <label htmlFor="contact-email">Budimo u kontaktu.</label>
+            <p>
+              Ostavite svoj kontakt za više informacija o boravku i proslavama.
+            </p>
+            <div>
+              <input
+                id="contact-email"
+                type="email"
+                required
+                placeholder="Vaša e-mail adresa"
+                aria-label="Vaša e-mail adresa"
+              />
+              <button aria-label="Pošalji kontakt" type="submit">
+                {contactSent ? <Check /> : <ArrowUpRight />}
+              </button>
+            </div>
+            <small>
+              {contactSent
+                ? "Hvala! Demo zahtev je primljen. Poruka nije poslata."
+                : "Demo forma · Bez slanja e-mail poruka."}
+            </small>
+          </form>
+        </section>
+        <footer className="site-footer">
+          <div className="footer-wordmark">
+            Crystal <em>Light</em>
+            <span>✧</span>
+          </div>
+          <div className="footer-bottom">
+            <span>
+              © {new Date().getFullYear()} Crystal Light · Hotel & Events
+            </span>
+            <span>Prezentacioni demo · Adspire Digital</span>
+            <button
+              onClick={() => {
+                sessionStorage.removeItem("crystal-intro");
+                window.location.reload();
+              }}
+            >
+              Ponovi uvodni doživljaj <Sparkles size={14} />
+            </button>
+          </div>
+        </footer>
+      </main>
+      {eventModal && (
+        <Modal
+          title={
+            eventSent
+              ? "Vaš trenutak je korak bliže."
+              : "Hajde da isplaniramo slavlje."
+          }
+          onClose={() => setEventModal(false)}
+        >
+          {eventSent ? (
+            <div className="success-state">
+              <span className="success-icon">
+                <Check size={32} />
+              </span>
+              <h3>Hvala na poverenju.</h3>
+              <p>
+                Upit za {dateLabel(eventDate)} je zabeležen u demou. Pratite
+                njegov status u svom nalogu.
+              </p>
+              <Link to="/client" className="btn btn-gold">
+                Moj nalog
+                <ArrowUpRight size={18} />
+              </Link>
+              <small>Ovo je simulacija. Poruka nije poslata hotelu.</small>
+            </div>
+          ) : (
+            <form onSubmit={submitEvent} className="event-form">
+              <p className="muted">
+                Recite nam kako zamišljate svoj poseban dan.
+              </p>
+              <div className="form-grid">
+                <label className="field">
+                  Vrsta proslave
+                  <select
+                    value={eventType}
+                    onChange={(e) => setEventType(e.target.value)}
+                  >
+                    {[
+                      "Venčanje",
+                      "Rođendan",
+                      "Krštenje",
+                      "Poslovni događaj",
+                      "Dečiji rođendan",
+                      "Večera u restoranu",
+                    ].map((t) => (
+                      <option key={t}>{t}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="field">
+                  Datum
+                  <input
+                    type="date"
+                    value={eventDate}
+                    min={today}
+                    required
+                    onChange={(e) => setEventDate(e.target.value)}
+                  />
+                </label>
+                <label className="field">
+                  Ime i prezime
+                  <input
+                    name="name"
+                    required
+                    placeholder="Vaše ime"
+                    autoComplete="name"
+                  />
+                </label>
+                <label className="field">
+                  Broj gostiju
+                  <input
+                    name="guests"
+                    type="number"
+                    required
+                    min="1"
+                    max="500"
+                    defaultValue="50"
+                  />
+                </label>
+                <label className="field">
+                  E-mail
+                  <input
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    placeholder="ime@primer.rs"
+                  />
+                </label>
+                <label className="field">
+                  Telefon
+                  <input
+                    name="phone"
+                    type="tel"
+                    autoComplete="tel"
+                    required
+                    placeholder="+381"
+                  />
+                </label>
+              </div>
+              <label className="field">
+                Vaše želje
+                <textarea
+                  name="note"
+                  rows={3}
+                  placeholder="Dekoracija, meni, muzika... Pišite nam o svojim idejama."
+                />
+              </label>
+              <button className="btn btn-gold full" type="submit">
+                Pošaljite demo upit
+                <ArrowUpRight size={18} />
+              </button>
+              <p className="fine-print">
+                Nema stvarnog slanja. Upit se prikazuje u admin panelu.
+              </p>
+            </form>
+          )}
+        </Modal>
+      )}
+      {giftModal && (
+        <Modal
+          title={
+            giftDone
+              ? "Lep trenutak, spreman za poklon."
+              : "Poklon koji se pamti."
+          }
+          onClose={() => setGiftModal(false)}
+        >
+          {giftDone ? (
+            <div className="success-state">
+              <span className="success-icon">
+                <Gift size={32} />
+              </span>
+              <h3>Vaš demo vaučer je spreman.</h3>
+              <p>
+                Vaučer u vrednosti od {amount} € čeka vas u korisničkom nalogu.
+              </p>
+              <Link to="/client" className="btn btn-gold">
+                Pogledajte vaučer
+                <ArrowUpRight size={18} />
+              </Link>
+              <small>Nema naplate. Vaučer je demonstracioni.</small>
+            </div>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const f = new FormData(e.currentTarget);
+                addVoucher({
+                  id: "GIFT-" + Date.now().toString().slice(-5),
+                  amount,
+                  name: String(f.get("recipient")),
+                });
+                setGiftDone(true);
+              }}
+            >
+              <p className="muted">
+                Izaberite vrednost i posvetite ga svojoj dragoj osobi.
+              </p>
+              <div className="gift-amounts">
+                {[50, 100, 200, 300].map((v) => (
+                  <button
+                    type="button"
+                    className={amount === v ? "active" : ""}
+                    key={v}
+                    onClick={() => setAmount(v)}
+                  >
+                    {v} €
+                  </button>
+                ))}
+              </div>
+              <label className="field">
+                Ime primaoca
+                <input
+                  name="recipient"
+                  placeholder="Za koga čuvamo lep trenutak?"
+                  required
+                />
+              </label>
+              <label className="field">
+                Vaš e-mail
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="ime@primer.rs"
+                  required
+                />
+              </label>
+              <button className="btn btn-gold full" type="submit">
+                Kreirajte demo vaučer · {amount} €<Gift size={18} />
+              </button>
+              <p className="fine-print">
+                Demo kupovina, bez plaćanja i slanja poruke.
+              </p>
+            </form>
+          )}
+        </Modal>
+      )}
+      {galleryIndex !== null && (
+        <Modal
+          title={gallery[galleryIndex].title}
+          onClose={() => setGalleryIndex(null)}
+          wide
+        >
+          <div className="lightbox">
+            <img
+              src={gallery[galleryIndex].src}
+              alt={gallery[galleryIndex].title}
+            />
+            <div className="lightbox-controls">
+              <button
+                className="icon-button"
+                aria-label="Prethodna fotografija"
+                onClick={() =>
+                  setGalleryIndex(
+                    (galleryIndex + gallery.length - 1) % gallery.length,
+                  )
+                }
+              >
+                <ArrowLeft />
+              </button>
+              <span>
+                {galleryIndex + 1} / {gallery.length}
+              </span>
+              <button
+                className="icon-button"
+                aria-label="Sledeća fotografija"
+                onClick={() =>
+                  setGalleryIndex((galleryIndex + 1) % gallery.length)
+                }
+              >
+                <ArrowRight />
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
 }
