@@ -39,6 +39,10 @@ const initial: State = {
     "channel-Booking.com": "on",
     "channel-Airbnb": "on",
     "channel-Google Hotels": "on",
+    "booking-setup": "2",
+    "eturista-setup": "1",
+    "eturista-CL-2601": "Spremno za slanje",
+    "eturista-CL-2609": "Uspešno prijavljen",
   },
   vouchers: [
     { id: "GIFT-2401", amount: 150, name: "Milena" },

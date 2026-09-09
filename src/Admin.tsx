@@ -30,6 +30,13 @@ import {
   Tags,
   UserCog,
   Bell,
+  AlertTriangle,
+  ArrowLeftRight,
+  Building2,
+  CloudCog,
+  Link2,
+  RefreshCw,
+  TrendingUp,
 } from "lucide-react";
 import { rooms, today, dateLabel, type Booking, type Inquiry } from "./data";
 import { addDays, nightsBetween, isAvailable } from "./availability.mjs";
@@ -50,8 +57,10 @@ const nav = [
   { id: "events", label: "Proslave", icon: Sparkles },
   { id: "housekeeping", label: "Održavanje", icon: WandSparkles },
   { id: "reports", label: "Izveštaji", icon: CircleDollarSign },
+  { id: "owner", label: "Vlasnički pregled", icon: TrendingUp },
   { id: "pricing", label: "Cene i paketi", icon: Tags },
   { id: "channels", label: "Kanali prodaje", icon: Radio },
+  { id: "integrations", label: "Integracije", icon: CloudCog },
   { id: "messages", label: "Poruke gostima", icon: MessageSquareText },
   { id: "vouchers", label: "Vaučeri", icon: Gift },
   { id: "website", label: "Sadržaj sajta", icon: Globe2 },
@@ -100,7 +109,7 @@ export default function Admin() {
     (n) =>
       role === "Vlasnik" ||
       (role === "Recepcioner"
-        ? !["reports", "channels", "pricing", "team"].includes(n.id)
+        ? !["reports", "owner", "channels", "integrations", "pricing", "team"].includes(n.id)
         : ["housekeeping", "settings"].includes(n.id)),
   );
   useEffect(() => {
@@ -115,6 +124,9 @@ export default function Admin() {
     (b) => !["Otkazana", "Blokirano"].includes(b.status),
   );
   const revenue = paid.reduce((a, b) => a + b.total, 0);
+  const directRevenue = paid.filter((b) => b.channel === "Direktno").reduce((sum, b) => sum + b.total, 0);
+  const directShare = revenue ? Math.round((directRevenue / revenue) * 100) : 0;
+  const savedCommission = Math.round(directRevenue * 0.15);
   const occupied = rooms.filter((r) =>
     paid.some((b) => b.roomId === r.id && b.start <= today && b.end > today),
   ).length;
@@ -1095,6 +1107,47 @@ export default function Admin() {
                   <button className="ad-primary">Sačuvaj cenovnik</button>
                 </form>
               </section>
+            </>
+          )}
+          {tab === "integrations" && (
+            <>
+              <div className="ad-integration-status">
+                <div><span className="ad-status-pulse"/><span><strong>Sistem radi uredno</strong><small>Poslednja demo provera pre 2 minuta</small></span></div>
+                <button onClick={()=>{s.setSettings({...s.settings,"last-health-check":new Date().toLocaleString("sr-Latn-RS")});s.toast("Sve demo integracije su proverene.")}}><RefreshCw size={16}/> Proveri sve veze</button>
+              </div>
+              <section className="ad-panel ad-integration-hero booking-connect">
+                <div className="ad-integration-brand"><b>B.</b><span>Booking.com<small>Connectivity · demonstracija</small></span><span className="ad-badge green">Veza spremna</span></div>
+                <div className="ad-sync-flow"><span>Booking.com<small>rezervacije · cene</small></span><div><i/><ArrowLeftRight size={25}/><small>dvosmerno</small></div><span>Crystal Light<small>sobe · dostupnost</small></span></div>
+                <div className="ad-sync-kpis"><div><strong>12 sek</strong><span>poslednji ciklus</span></div><div><strong>0</strong><span>grešaka danas</span></div><div><strong>365</strong><span>dana dostupnosti</span></div><div><strong>3/3</strong><span>sobe mapirane</span></div></div>
+                <button className="ad-primary" onClick={()=>{s.setSettings({...s.settings,"sync-Booking.com":new Date().toLocaleString("sr-Latn-RS"),"channel-Booking.com":"on"});s.toast("Booking.com demo sync: rezervacije, cene i dostupnost su usklađene.")}}><RefreshCw size={17}/> Pokreni demo sinhronizaciju</button>
+              </section>
+              <div className="ad-integration-grid">
+                <section className="ad-panel ad-setup-card"><div className="ad-panel-title"><div><span className="ad-eyebrow">BOOKING.COM SETUP</span><h2>Povezivanje bez nagađanja.</h2></div><span className="ad-setup-percent">{Math.min(100,Number(s.settings["booking-setup"]||2)*25)}%</span></div><div className="ad-setup-steps">{[{title:"Property ID i autorizacija",copy:"Hotel potvrđuje izabranog connectivity provajdera."},{title:"Mapiranje soba",copy:"Povezujemo svaku sobu i njen rate plan."},{title:"Cene i dostupnost",copy:"Uvozimo postojeće stanje i pravila boravka."},{title:"Test rezervacija",copy:"Proveravamo oba smera pre aktivacije."}].map((step,index)=>{const current=Number(s.settings["booking-setup"]||2);return <div className={index<current?"done":index===current?"current":""} key={step.title}><span>{index<current?<Check size={15}/>:index+1}</span><div><strong>{step.title}</strong><small>{step.copy}</small></div></div>})}</div><button className="ad-secondary" disabled={Number(s.settings["booking-setup"]||2)>=4} onClick={()=>{const next=Math.min(4,Number(s.settings["booking-setup"]||2)+1);s.setSettings({...s.settings,"booking-setup":String(next)});s.toast(next===4?"Booking.com demo setup je završen.":"Sledeći demo korak je završen.")}}>{Number(s.settings["booking-setup"]||2)>=4?"Demo setup završen":"Završi sledeći korak"} <ArrowUpRight size={16}/></button></section>
+                <section className="ad-panel ad-mapping-card"><div className="ad-panel-title"><div><span className="ad-eyebrow">MAPIRANJE INVENTARA</span><h2>Jedna soba. Isti podatak svuda.</h2></div></div>{rooms.map(room=><div className="ad-mapping-row" key={room.id}><span><BedDouble size={17}/><b>{room.number}</b>{room.name}</span><ArrowLeftRight size={16}/><span><b>BKG-{room.number}</b>Standard rate</span><i className="ok"><Check size={13}/></i></div>)}<div className="ad-warning-row"><AlertTriangle size={17}/><span><strong>Demo kontrola konflikata</strong><small>Ako mapiranje ili cena nisu ispravni, sistem zaustavlja sync i objašnjava šta treba popraviti.</small></span></div></section>
+              </div>
+              <section className="ad-panel ad-integration-hero eturista-connect">
+                <div className="ad-integration-brand"><Building2/><span>eTurista<small>Prijava i odjava gostiju · demonstracija</small></span><span className="ad-badge">Test okruženje</span></div>
+                <div className="ad-etourist-copy"><div><span className="ad-eyebrow">JEDAN UNOS, BEZ DUPLOG POSLA</span><h2>Recepcija prijavi gosta.<br/><i>Sistem odradi ostalo.</i></h2><p>Podaci za prijavu, boravišnu taksu i odjavu pripremaju se iz iste kartice gosta. Demo ništa ne šalje državnom sistemu.</p></div><div className="ad-etourist-progress"><strong>{Math.min(100,Number(s.settings["eturista-setup"]||1)*25)}%</strong><span>podešavanja završeno</span><button className="ad-secondary" disabled={Number(s.settings["eturista-setup"]||1)>=4} onClick={()=>{const next=Math.min(4,Number(s.settings["eturista-setup"]||1)+1);s.setSettings({...s.settings,"eturista-setup":String(next)});s.toast(next===4?"eTurista demo setup je spreman.":"eTurista demo setup je napredovao.")}}>Nastavi demo setup</button></div></div>
+                <div className="ad-etourist-setup">{["Nalog objekta","Jedinstveni broj objekta","Mapiranje smeštajnih jedinica","Test prijava i odjava"].map((item,index)=><span className={index<Number(s.settings["eturista-setup"]||1)?"done":""} key={item}><i>{index<Number(s.settings["eturista-setup"]||1)?<Check size={13}/>:index+1}</i>{item}</span>)}</div>
+              </section>
+              <section className="ad-panel ad-sync-queue"><div className="ad-panel-title"><div><span className="ad-eyebrow">DANAŠNJI GOSTI</span><h2>Red za eTurista prijavu.</h2></div><button className="ad-secondary" onClick={()=>{const next={...s.settings};paid.filter(b=>b.status==="U hotelu").forEach(b=>next[`eturista-${b.id}`]="Uspešno prijavljen");next.eturista=new Date().toLocaleString("sr-Latn-RS");s.setSettings(next);s.toast("Demo prijava svih gostiju je završena. Podaci nisu poslati.")}}>Prijavi sve · demo</button></div>{paid.filter(b=>b.status==="U hotelu").map(booking=>{const status=s.settings[`eturista-${booking.id}`]||"Spremno za slanje";return <div className="ad-sync-row" key={booking.id}><div className="ad-avatar">{booking.name.split(" ").map(part=>part[0]).slice(0,2).join("")}</div><span><strong>{booking.name}</strong><small>{booking.id} · Soba {rooms.find(room=>room.id===booking.roomId)?.number}</small></span><span><small>Državljanstvo</small>Srbija</span><span><small>Dolazak</small>{dateLabel(booking.start)} · 14:00</span><b className={status.includes("Uspešno")?"success":"waiting"}>{status}</b><button disabled={status.includes("Uspešno")} onClick={()=>{s.setSettings({...s.settings,[`eturista-${booking.id}`]:"Uspešno prijavljen",eturista:new Date().toLocaleString("sr-Latn-RS")});s.toast(`${booking.name}: demo prijava uspešna.`)}}>{status.includes("Uspešno")?<Check size={16}/>:<><RefreshCw size={14}/> Pošalji</>}</button></div>})}<footer><ShieldCheck size={16}/> Demo prikaz zasnovan na planiranom integracionom toku. Važeća specifikacija i test pristup proveravaju se pre ugovaranja fiksnog roka.</footer></section>
+              <section className="ad-panel ad-sync-log"><div className="ad-panel-title"><div><span className="ad-eyebrow">SYNC CENTAR</span><h2>Sve promene imaju trag.</h2></div></div>{[{time:"10:42:18",system:"Booking.com",action:"Nova rezervacija CL-2611 preuzeta",state:"Uspešno"},{time:"10:41:53",system:"Crystal Light",action:"Dostupnost zatvorena na svim kanalima",state:"Uspešno"},{time:"10:38:06",system:"eTurista · demo",action:"Gost Maja Kostić označen kao prijavljen",state:"Demo"},{time:"09:15:22",system:"Google Hotels",action:"Cene za narednih 365 dana osvežene",state:"Uspešno"}].map(item=><div key={item.time+item.system}><time>{item.time}</time><span>{item.system}</span><p>{item.action}</p><b>{item.state}</b></div>)}</section>
+            </>
+          )}
+          {tab === "owner" && (
+            <>
+              <section className="ad-owner-hero">
+                <div><span className="ad-eyebrow">POSLOVANJE NA JEDNOM EKRANU</span><h2>Znate gde ste.<br/><i>I kuda rastete.</i></h2><p>Brojevi koje vlasnik razume bez tabela, svezaka i traženja podataka od recepcije.</p></div>
+                <div className="ad-owner-saving"><span>Procenjena ušteda na proviziji</span><strong>{money(savedCommission)}</strong><p>na trenutnim direktnim rezervacijama</p><div><b>{money(savedCommission * 12)}</b><small>godišnja projekcija*</small></div></div>
+              </section>
+              <div className="ad-owner-kpis">
+                {[{label:"Prihod rezervacija",value:money(revenue),change:"+18%",note:"u odnosu na prethodni period"},{label:"Direktni prihod",value:money(directRevenue),change:`${directShare}%`,note:"bez provizije portala"},{label:"Prosečna cena noći",value:money(paid.length?revenue/paid.reduce((sum,b)=>sum+nightsBetween(b.start,b.end),0):0),change:"+7%",note:"ADR · prosečna ostvarena cena"},{label:"Proslave u pipeline-u",value:String(s.inquiries.filter(i=>i.status!=="Odbijeno").length).padStart(2,"0"),change:"3 nova",note:"potencijal budućih prihoda"}].map(item=><article className="ad-panel" key={item.label}><span>{item.label}</span><strong>{item.value}</strong><b>{item.change}</b><small>{item.note}</small></article>)}
+              </div>
+              <div className="ad-owner-grid">
+                <section className="ad-panel ad-owner-chart"><div className="ad-panel-title"><div><span className="ad-eyebrow">PRIHOD I POPUNJENOST</span><h2>Trend koji ide u dobrom smeru.</h2></div><button className="ad-secondary" onClick={exportCsv}>Preuzmi izveštaj</button></div><div className="ad-chart-bars">{[{m:"APR",v:42,o:52},{m:"MAJ",v:57,o:64},{m:"JUN",v:66,o:71},{m:"JUL",v:79,o:86},{m:"AVG",v:91,o:92},{m:"SEP",v:74,o:78}].map(item=><div key={item.m}><span><i style={{height:`${item.v}%`}}/><i style={{height:`${item.o}%`}}/></span><small>{item.m}</small></div>)}</div><div className="ad-chart-legend"><span><i/>Prihod</span><span><i/>Popunjenost</span><b>Ilustrativan trend demo podataka</b></div></section>
+                <aside className="ad-panel ad-owner-alerts"><span className="ad-eyebrow">PAŽNJA VLASNIKA</span><h2>Važno danas.</h2>{[{icon:TrendingUp,title:"Direktne rezervacije rastu",copy:`${directShare}% vrednosti dolazi bez provizije.`},{icon:AlertTriangle,title:"2 sobe traže pažnju",copy:"Domaćinstvo je ažuriralo status u realnom vremenu."},{icon:Sparkles,title:"3 nova upita za proslave",copy:"Potencijalna vrednost zahteva brz odgovor."}].map(({icon:Icon,title,copy})=><button key={title} onClick={()=>setTab(title.includes("proslave")?"events":title.includes("sobe")?"housekeeping":"reports")}><Icon size={20}/><span><strong>{title}</strong><small>{copy}</small></span><ArrowUpRight size={16}/></button>)}</aside>
+              </div>
+              <section className="ad-panel ad-commission-story"><div><span className="ad-eyebrow">ZAŠTO DIREKTAN SAJT</span><h2>Portal dovede gosta prvi put.<br/>Vi ga vratite direktno.</h2></div><div><strong>15–18%</strong><span>ilustrativna provizija portala</span><ArrowLeftRight/><strong>0%</strong><span>Adspire provizija na direktnu rezervaciju</span></div><button className="ad-primary" onClick={()=>setTab("messages")}>Pogledaj automatizaciju povratka gosta <ArrowUpRight size={16}/></button><small>* Projekcija je demonstraciona i zavisi od stvarnog obima rezervacija.</small></section>
             </>
           )}
           {tab === "pricing" && (
